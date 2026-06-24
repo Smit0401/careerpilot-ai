@@ -7,7 +7,38 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
+async function generateWithRetry(config, retries = 3) {
 
+    for (let i = 0; i < retries; i++) {
+
+        try {
+
+            return await ai.models.generateContent(config)
+
+        } catch (error) {
+
+            if (
+                error.status === 503 &&
+                i < retries - 1
+            ) {
+
+                console.log(`Gemini overloaded. Retry ${i + 1}...`)
+
+                await new Promise(resolve =>
+                    setTimeout(resolve, 3000)
+                )
+
+            } else {
+
+                throw error
+
+            }
+
+        }
+
+    }
+
+}
 const interviewReportSchema = z.object({
     matchScore: z.number().min(0).max(100).describe("A score between 0 and 100 indicating how well the candidate's profile matches the job description"),
     technicalQuestions: z.array(z.object({
@@ -194,8 +225,8 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
                         The resume should not be so lengthy, it should ideally be 1-2 pages long when converted to PDF. Focus on quality rather than quantity and make sure to include all the relevant information that can increase the candidate's chances of getting an interview call for the given job description.
                     `
 
-    const response = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
+    const response = await generateWithRetry({
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
