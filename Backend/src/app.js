@@ -4,26 +4,41 @@ const cors = require('cors')
 const multer = require('multer')
 const app = express()
 
-const allowedOrigins = new Set([
-    process.env.CLIENT_URL,
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174'
-].filter(Boolean))
-
-app.use(express.json({ limit: '1mb' }))
-app.use(cookieParser())
 app.use(cors({
     origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
+
+        // Postman, mobile apps, same-origin requests
+        if (!origin) {
             return callback(null, true)
         }
 
-        return callback(new Error('Origin is not allowed by CORS'))
+        const allowedOrigins = [
+            process.env.CLIENT_URL,
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174"
+        ]
+
+        if (
+            allowedOrigins.includes(origin) ||
+            origin.endsWith(".vercel.app")
+        ) {
+            return callback(null, true)
+        }
+
+        console.log("Blocked Origin:", origin)
+
+        return callback(
+            new Error("Origin is not allowed by CORS")
+        )
     },
     credentials: true
 }))
+
+app.use(express.json({ limit: '1mb' }))
+app.use(cookieParser())
+
 
 const authRouter = require('./routes/auth.routes')
 const interviewRouter = require('./routes/interview.routes')

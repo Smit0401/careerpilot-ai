@@ -7,7 +7,7 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
-async function generateWithRetry(config, retries = 3) {
+async function generateWithRetry(config, retries = 5) {
 
     for (let i = 0; i < retries; i++) {
 
@@ -25,7 +25,7 @@ async function generateWithRetry(config, retries = 3) {
                 console.log(`Gemini overloaded. Retry ${i + 1}...`)
 
                 await new Promise(resolve =>
-                    setTimeout(resolve, 3000)
+                    setTimeout(resolve, 5000)
                 )
 
             } else {
@@ -133,8 +133,8 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         8. Prioritize skills explicitly mentioned in the Job Description.
         `
 
-    const response = await ai.models.generateContent({
-        model: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
+    const response = await generateWithRetry({
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
