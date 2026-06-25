@@ -1,7 +1,7 @@
 const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod/v3")
 const { zodToJsonSchema } = require("zod-to-json-schema")
-
+const { generateWithRetry } = require("../utils/geminiRetry")
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
@@ -56,14 +56,15 @@ Instructions:
 5. Keep roadmap practical and interview-oriented.
 `
 
-    const response = await ai.models.generateContent({
+    const response = await generateWithRetry(ai, {
         model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: zodToJsonSchema(
                 studyPlanSchema
-            )
+            ),
+            maxOutputTokens: 2048
         }
     })
 

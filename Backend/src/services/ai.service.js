@@ -2,43 +2,44 @@ const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod/v3")
 const { zodToJsonSchema } = require("zod-to-json-schema")
 const puppeteer = require("puppeteer")
+const { generateWithRetry } = require("../utils/geminiRetry")
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
-async function generateWithRetry(config, retries = 5) {
+// async function generateWithRetry(config, retries = 5) {
 
-    for (let i = 0; i < retries; i++) {
+//     for (let i = 0; i < retries; i++) {
 
-        try {
+//         try {
 
-            return await ai.models.generateContent(config)
+//             return await ai.models.generateContent(config)
 
-        } catch (error) {
+//         } catch (error) {
 
-            if (
-                error.status === 503 &&
-                i < retries - 1
-            ) {
+//             if (
+//                 error.status === 503 &&
+//                 i < retries - 1
+//             ) {
 
-                console.log(`Gemini overloaded. Retry ${i + 1}...`)
+//                 console.log(`Gemini overloaded. Retry ${i + 1}...`)
 
-                await new Promise(resolve =>
-                    setTimeout(resolve, 5000)
-                )
+//                 await new Promise(resolve =>
+//                     setTimeout(resolve, 5000)
+//                 )
 
-            } else {
+//             } else {
 
-                throw error
+//                 throw error
 
-            }
+//             }
 
-        }
+//         }
 
-    }
+//     }
 
-}
+// }
 const interviewReportSchema = z.object({
     matchScore: z.number().min(0).max(100).describe("A score between 0 and 100 indicating how well the candidate's profile matches the job description"),
     technicalQuestions: z.array(z.object({
@@ -133,12 +134,13 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         8. Prioritize skills explicitly mentioned in the Job Description.
         `
 
-    const response = await generateWithRetry({
+    const response = await generateWithRetry(ai, {
         model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: zodToJsonSchema(interviewReportSchema),
+            maxOutputTokens: 4096
         }
     })
 
@@ -225,12 +227,13 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
                         The resume should not be so lengthy, it should ideally be 1-2 pages long when converted to PDF. Focus on quality rather than quantity and make sure to include all the relevant information that can increase the candidate's chances of getting an interview call for the given job description.
                     `
 
-    const response = await generateWithRetry({
+    const response = await generateWithRetry(ai, {
         model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: zodToJsonSchema(resumePdfSchema),
+            maxOutputTokens: 4096
         }
     })
 
