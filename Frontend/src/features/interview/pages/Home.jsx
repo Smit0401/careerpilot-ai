@@ -19,6 +19,7 @@ const Home = () => {
     const [selfDescription, setSelfDescription] = useState("")
     const [resumeFile, setResumeFile] = useState(null)
     const [dragging, setDragging] = useState(false)
+    const [loadingMessage, setLoadingMessage] = useState("")
 
     useEffect(() => {
         getReports().catch((error) => showToast(getErrorMessage(error, "Could not load recent reports"), "error"))
@@ -36,6 +37,37 @@ const Home = () => {
         }
         setResumeFile(file)
     }
+    useEffect(() => {
+
+        if (!loading) {
+            setLoadingMessage("")
+            return
+        }
+
+        const messages = [
+            "📄 Reading your resume...",
+            "🎯 Matching your profile with the job description...",
+            "🤖 Generating technical interview questions...",
+            "💬 Preparing behavioral questions...",
+            "📚 Identifying skill gaps...",
+            "🧠 Building your personalized learning plan..."
+        ]
+
+        let index = 0
+
+        setLoadingMessage(messages[0])
+
+        const interval = setInterval(() => {
+
+            index = Math.min(index + 1, messages.length - 1)
+
+            setLoadingMessage(messages[index])
+
+        }, 3500)
+
+        return () => clearInterval(interval)
+
+    }, [loading])
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -54,11 +86,19 @@ const Home = () => {
                 selfDescription: selfDescription.trim(),
                 resumeFile,
             })
-            showToast("Your interview report is ready", "success")
+            showToast(
+                "🎉 Interview report generated successfully!",
+                "success"
+            )
             navigate(`/interview/${report._id}`)
         } catch (error) {
-            showToast(getErrorMessage(error, "Report generation failed"), "error")
-        }
+            const message = getErrorMessage(
+                error,
+                "AI service is currently busy. Please try again."
+            )
+
+            showToast(message, "error")
+                    }
     }
 
     return (
@@ -127,10 +167,36 @@ const Home = () => {
                         </div>
                     </div>
                 </div>
+                {loading && (
+                    <div className="generation-status">
+
+                        <div className="status-spinner" />
+
+                        <div className="generation-content">
+
+                            <h4>🤖 CareerPilot AI is analyzing your profile</h4>
+
+                            <p>{loadingMessage}</p>
+
+                            <small>
+                                Please don't refresh this page. Your report is being generated securely.
+                            </small>
+
+                        </div>
+
+                    </div>
+                )}
                 <div className="generator-footer">
                     <p>Analysis usually takes under a minute.</p>
                     <button className="button primary-button" disabled={loading}>
-                        {loading ? <><span className="button-spinner" /> Generating report...</> : "Generate interview report"}
+                        {loading ? (
+                            <>
+                                <span className="button-spinner" />
+                                {loadingMessage || "Generating report..."}
+                            </>
+                        ) : (
+                            "Generate Interview Report"
+                        )}
                     </button>
                 </div>
             </form>

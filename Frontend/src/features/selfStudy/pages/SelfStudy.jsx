@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useEffect } from "react"
 import "../style/selfStudy.scss"
 import { generateStudyPlan } from "../services/selfStudy.api"
 import { getLearningResources, getArticles } from "../../interview/interview.resources.api"
@@ -11,7 +12,38 @@ export default function SelfStudy() {
     const [videos, setVideos] = useState([])
     const [articles, setArticles] = useState([])
     const [loading, setLoading] = useState(false)
+    const [loadingMessage, setLoadingMessage] = useState("")
 
+    useEffect(() => {
+
+        if (!loading) {
+            setLoadingMessage("")
+            return
+        }
+
+        const messages = [
+            "📚 Understanding your learning goal...",
+            "🧠 Designing your personalized roadmap...",
+            "🎯 Organizing concepts by priority...",
+            "🎥 Finding the best learning videos...",
+            "📖 Collecting official documentation..."
+        ]
+
+        let index = 0
+
+        setLoadingMessage(messages[0])
+
+        const interval = setInterval(() => {
+
+            index = Math.min(index + 1, messages.length - 1)
+
+            setLoadingMessage(messages[index])
+
+        }, 3000)
+
+        return () => clearInterval(interval)
+
+    }, [loading])
     const handleStudy = async () => {
 
         try {
@@ -66,7 +98,7 @@ export default function SelfStudy() {
 
                     <input
                         type="text"
-                        placeholder="Ex: Docker, React Hooks, Transformers"
+                        placeholder="Ex: Dynamic Programming, React, System Design"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
                     />
@@ -104,13 +136,44 @@ export default function SelfStudy() {
                     </select>
 
                 </div>
+                {
+                loading && (
 
+                    <div className="generation-status">
+
+                        <div className="status-spinner"/>
+
+                        <div className="generation-content">
+
+                            <h4>📖 CareerPilot AI is preparing your study plan</h4>
+
+                            <p>{loadingMessage}</p>
+
+                            <small>
+                                This usually takes 15–30 seconds.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                )
+            }
                 <button
                     className="study-btn"
                     onClick={handleStudy}
                 >
 
-                    {loading ? "Generating..." : "Let's Study"}
+                    {
+                    loading
+                    ?
+                    <>
+                    <span className="button-spinner"/>
+                    {loadingMessage}
+                    </>
+                    :
+                    "Let's Study"
+                    }
 
                 </button>
 

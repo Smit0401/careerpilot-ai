@@ -66,6 +66,8 @@ const Interview = () => {
     const { report, getReportById, loading, getResumePdf } = useInterview()
     const { showToast } = useToast()
     const { interviewId } = useParams()
+    const [resumeLoading, setResumeLoading] = useState(false)
+    const [resumeMessage, setResumeMessage] = useState("")
 
     useEffect(() => {
         getReportById(interviewId)
@@ -73,14 +75,78 @@ const Interview = () => {
             .catch((error) => setLoadError(getErrorMessage(error, "Could not load this report")))
     }, [getReportById, interviewId])
     
+    useEffect(() => {
+
+        if (!resumeLoading) {
+
+            setResumeMessage("")
+            return
+
+        }
+
+        const messages = [
+
+            "📄 Reading your profile...",
+
+            "🎯 Tailoring resume to the job...",
+
+            "✍️ Optimizing ATS keywords...",
+
+            "📑 Creating one-page resume...",
+
+            "⬇️ Preparing PDF..."
+
+        ]
+
+        let index = 0
+
+        setResumeMessage(messages[0])
+
+        const interval = setInterval(() => {
+
+            index = Math.min(index + 1, messages.length - 1)
+
+            setResumeMessage(messages[index])
+
+        }, 3000)
+
+        return () => clearInterval(interval)
+
+    }, [resumeLoading])
 
     const downloadResume = async () => {
+
         try {
+
+            setResumeLoading(true)
+
             await getResumePdf(interviewId)
-            showToast("Resume downloaded", "success")
-        } catch (error) {
-            showToast(getErrorMessage(error, "Could not generate resume"), "error")
+
+            showToast(
+                "🎉 Resume downloaded successfully!",
+                "success"
+            )
+
         }
+
+        catch (error) {
+
+            showToast(
+                getErrorMessage(
+                    error,
+                    "Could not generate resume"
+                ),
+                "error"
+            )
+
+        }
+
+        finally {
+
+            setResumeLoading(false)
+
+        }
+
     }
 
     const handleVideoToggle = async (topic) => {
@@ -162,15 +228,57 @@ const Interview = () => {
     return (
         <main className="page-container report-page">
             <header className="report-hero">
-                <div>
+                {
+                    resumeLoading && (
+
+                    <div className="generation-status">
+
+                    <div className="status-spinner"/>
+
+                    <div className="generation-content">
+
+                    <h4>
+                    📄 CareerPilot AI is building your resume
+                    </h4>
+
+                    <p>{resumeMessage}</p>
+
+                    <small>
+
+                    Creating an ATS-friendly PDF tailored to the selected job.
+
+                    </small>
+
+                    </div>
+
+                    </div>
+
+                    )
+                    }
+                                    <div>
                     <Link className="back-link" to="/reports">← All reports</Link>
                     <p className="eyebrow">Interview report</p>
                     <h1>{report.title}</h1>
                     <p>Generated {new Date(report.createdAt).toLocaleDateString(undefined, { dateStyle: "long" })}</p>
                 </div>
-                <button onClick={downloadResume} disabled={loading} className="button secondary-button">
-                    {loading ? "Preparing..." : "Download tailored resume"}
-                </button>
+                <button
+                    onClick={downloadResume}
+                    disabled={resumeLoading}
+                    className="button secondary-button"
+                    >
+
+                    {
+                    resumeLoading
+                    ?
+                    <>
+                    <span className="button-spinner"/>
+                    {resumeMessage}
+                    </>
+                    :
+                    "Download Tailored Resume"
+                    }
+
+                    </button>
             </header>
 
             <div className="report-layout">
