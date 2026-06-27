@@ -1,7 +1,8 @@
 const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod/v3")
 const { zodToJsonSchema } = require("zod-to-json-schema")
-const puppeteer = require("puppeteer")
+const puppeteer = require("puppeteer-core")
+const chromium = require("@sparticuz/chromium")
 const { generateWithRetry } = require("../utils/geminiRetry")
 
 const ai = new GoogleGenAI({
@@ -183,14 +184,11 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 
 async function generatePdfFromHtml(htmlContent) {
     const browser = await puppeteer.launch({
-        headless: true,
-        args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu"
-        ]
-    })
+    args: chromium.args,
+    executablePath: await chromium.executablePath(),
+    defaultViewport: chromium.defaultViewport,
+    headless: chromium.headless
+})
     try {
         const page = await browser.newPage()
         await page.setJavaScriptEnabled(false)
