@@ -140,30 +140,44 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         config: {
             responseMimeType: "application/json",
             responseSchema: zodToJsonSchema(interviewReportSchema),
-            maxOutputTokens: 4096
         }
     })
 
     let parsedResponse
+
     try {
-        parsedResponse = JSON.parse(response.text)
-    } catch {
+
+        const cleanedText = response.text
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim()
+
+        console.log("Gemini raw response:")
+        console.log(cleanedText)
+
+        parsedResponse = JSON.parse(cleanedText)
+
+    } catch (err) {
+
+        console.error("Failed to parse Gemini response:")
+        console.error(response.text)
+
         const error = new Error("AI returned an unreadable report")
         error.status = 502
         throw error
     }
 
-    const result = interviewReportSchema.safeParse(parsedResponse)
-    if (!result.success) {
-        const error = new Error("AI returned an incomplete report")
-        error.status = 502
-        throw error
+        const result = interviewReportSchema.safeParse(parsedResponse)
+        if (!result.success) {
+            const error = new Error("AI returned an incomplete report")
+            error.status = 502
+            throw error
+        }
+
+        return result.data
+
+
     }
-
-    return result.data
-
-
-}
 
 
 
